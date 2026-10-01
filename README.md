@@ -7,6 +7,53 @@ public interface Manageable {
     boolean isWorking();      // Статус работы (true/false)
 }
 
+ГЛАВНЫЙ ОДИН
+package models;
+
+import interfaces.Manageable;
+
+public abstract class FactoryEquipment implements Manageable {
+    protected String id, name;
+    protected boolean status;
+    protected double temperature; // Основной показатель (температура / нагрузка / мощность)
+
+    public FactoryEquipment(String id, String name, boolean status, double temperature) {
+        this.id = id; this.name = name; this.status = status; this.temperature = temperature;
+    }
+
+    @Override public void startWork() { this.status = true; }
+    @Override public void stopWork() { this.status = false; }
+    @Override public boolean isWorking() { return status; }
+
+    public abstract String getDetails();
+
+    public String getId() { return id; }
+    public String getName() { return name; }
+    public double getTemperature() { return temperature; }
+    public void setTemperature(double temperature) { this.temperature = temperature; }
+}
+
+подштука
+package models;
+
+public class ConveyorBelt extends FactoryEquipment {
+    private double speed; // Уникальное поле (speed, ramSize, brightness и т.д.)
+
+    public ConveyorBelt(String id, String name, boolean status, double temperature, double speed) {
+        super(id, name, status, temperature);
+        this.speed = speed;
+    }
+
+    public double getSpeed() { return speed; }
+    public void setSpeed(double speed) { this.speed = speed; }
+
+    @Override
+    public String getDetails() {
+        return String.format("%s [ID: %s, Name: %s, Active: %b, Metric: %.1f, Spec: %.1f]",
+                getClass().getSimpleName(), id, name, status, temperature, speed);
+    }
+}
+
 ЛОГИКА МАНАГЕР
 
 package logic;
@@ -72,52 +119,7 @@ public class SafetyProtocol<T extends FactoryEquipment> {
     }
 }
 
-ГЛАВНЫЙ ОДИН
-package models;
 
-import interfaces.Manageable;
-
-public abstract class FactoryEquipment implements Manageable {
-    protected String id, name;
-    protected boolean status;
-    protected double temperature; // Основной показатель (температура / нагрузка / мощность)
-
-    public FactoryEquipment(String id, String name, boolean status, double temperature) {
-        this.id = id; this.name = name; this.status = status; this.temperature = temperature;
-    }
-
-    @Override public void startWork() { this.status = true; }
-    @Override public void stopWork() { this.status = false; }
-    @Override public boolean isWorking() { return status; }
-
-    public abstract String getDetails();
-
-    public String getId() { return id; }
-    public String getName() { return name; }
-    public double getTemperature() { return temperature; }
-    public void setTemperature(double temperature) { this.temperature = temperature; }
-}
-
-подштука
-package models;
-
-public class ConveyorBelt extends FactoryEquipment {
-    private double speed; // Уникальное поле (speed, ramSize, brightness и т.д.)
-
-    public ConveyorBelt(String id, String name, boolean status, double temperature, double speed) {
-        super(id, name, status, temperature);
-        this.speed = speed;
-    }
-
-    public double getSpeed() { return speed; }
-    public void setSpeed(double speed) { this.speed = speed; }
-
-    @Override
-    public String getDetails() {
-        return String.format("%s [ID: %s, Name: %s, Active: %b, Metric: %.1f, Spec: %.1f]",
-                getClass().getSimpleName(), id, name, status, temperature, speed);
-    }
-}
 
 МЕЙН
 
