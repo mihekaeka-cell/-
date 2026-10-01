@@ -54,6 +54,37 @@ public class ConveyorBelt extends FactoryEquipment {
     }
 }
 
+ПРОТОКОЛ
+package logic;
+
+import models.FactoryEquipment;
+import java.util.function.Consumer;
+import java.util.function.Predicate;
+
+public class SafetyProtocol<T extends FactoryEquipment> {
+    private String protocolName;
+    private Predicate<T> condition;
+    private Consumer<T> action;
+
+    public SafetyProtocol(String ruleName, Predicate<T> condition, Consumer<T> action) {
+        this.protocolName = ruleName;
+        this.condition = condition;
+        this.action = action;
+    }
+
+    @SuppressWarnings("Не проверенно")
+    public void apply(FactoryEquipment item) {
+        try {
+            T target = (T) item;
+            if (condition.test(target)) {
+                action.accept(target);
+                System.out.println("Правило '" + protocolName + "' сработало для " + item.getName());
+            }
+        } catch (ClassCastException ignored) {}
+    }
+}
+
+
 ЛОГИКА МАНАГЕР
 
 package logic;
@@ -88,37 +119,6 @@ public class FactoryManager {
         return groups.values().stream().flatMap(List::stream);
     }
 }
-
-ПРОТОКОЛ
-package logic;
-
-import models.FactoryEquipment;
-import java.util.function.Consumer;
-import java.util.function.Predicate;
-
-public class SafetyProtocol<T extends FactoryEquipment> {
-    private String protocolName;
-    private Predicate<T> condition;
-    private Consumer<T> action;
-
-    public SafetyProtocol(String ruleName, Predicate<T> condition, Consumer<T> action) {
-        this.protocolName = ruleName;
-        this.condition = condition;
-        this.action = action;
-    }
-
-    @SuppressWarnings("Не проверенно")
-    public void apply(FactoryEquipment item) {
-        try {
-            T target = (T) item;
-            if (condition.test(target)) {
-                action.accept(target);
-                System.out.println("Правило '" + protocolName + "' сработало для " + item.getName());
-            }
-        } catch (ClassCastException ignored) {}
-    }
-}
-
 
 
 МЕЙН
