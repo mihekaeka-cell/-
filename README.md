@@ -230,3 +230,148 @@ public class Main {
         }
     }
 }
+
+ШТУКИ
+// --- Сценарий 1: Энергосбережение (SmartSocket) ---
+manager.addPolicy(new GenericPolicy<SmartSocket>(
+        "Энергосбережение",
+        socket -> socket.isActive() && socket.getCurrentLoad() > 2000.0,
+        SmartSocket::stop
+));
+
+// --- Сценарий 2: Спокойный сон (SmartLight) ---
+manager.addPolicy(new GenericPolicy<SmartLight>(
+        "Спокойный сон",
+        light -> light.getBrightness() > 50,
+        light -> {
+            light.setBrightness(10);
+            light.setColor("Warm");
+        }
+));
+
+// --- Сценарий 3: Эко-режим климата (SmartThermostat) ---
+manager.addPolicy(new GenericPolicy<SmartThermostat>(
+        "Эко-режим климата",
+        term -> term.isActive() && term.getTargetTemperature() > 25.0,
+        term -> term.setTargetTemperature(22.0)
+));
+
+// --- Сценарий 4: Умное обесточивание (Все устройства) ---
+manager.addPolicy(new GenericPolicy<BaseEntity>(
+        "Умное обесточивание",
+        device -> device.isActive() && device.getMainMetric() == 0, // mainMetric = powerConsumption
+        BaseEntity::stop
+));
+
+// --- Сценарий 5: Имитация присутствия (SmartLight) ---
+manager.addPolicy(new GenericPolicy<SmartLight>(
+        "Имитация присутствия",
+        light -> !light.isActive(),
+        light -> {
+            light.start();
+            light.setBrightness(100);
+        }
+));
+
+// --- Сценарий 6: Безопасный обогрев (SmartThermostat) ---
+manager.addPolicy(new GenericPolicy<SmartThermostat>(
+        "Безопасный обогрев",
+        term -> term.getTargetTemperature() < 15.0,
+        term -> {
+            term.start();
+            term.setTargetTemperature(20.0);
+        }
+));
+
+// --- Сценарий 7: Ночная подсветка (SmartLight) ---
+manager.addPolicy(new GenericPolicy<SmartLight>(
+        "Ночная подсветка",
+        light -> !light.isActive() && light.getName().toLowerCase().contains("коридор"),
+        light -> {
+            light.start();
+            light.setColor("Red");
+            light.setBrightness(5);
+        }
+));
+
+// --- Сценарий 8: Защита ТВ (SmartSocket) ---
+manager.addPolicy(new GenericPolicy<SmartSocket>(
+        "Защита ТВ",
+        socket -> socket.getName().toUpperCase().contains("TV") && socket.getMainMetric() < 10.0,
+        SmartSocket::stop
+));
+
+АНАЛ
+
+System.out.println("--- ТОП-3 устройства по энергопотреблению ---");
+manager.getAnalyticsStream()
+        .sorted(Comparator.comparingDouble(BaseEntity::getMainMetric).reversed())
+        .limit(3)
+        .forEach(d -> System.out.println(d.getDetails()));
+
+
+double totalPower = manager.getAnalyticsStream()
+        .filter(BaseEntity::isActive)
+        .mapToDouble(BaseEntity::getMainMetric)
+        .sum();
+
+System.out.printf("Суммарное энергопотребление: %.2f Вт\n", totalPower);
+
+List<String> roomsWithOffDevices = manager.getGroupMap().entrySet().stream()
+        .filter(entry -> entry.getValue().stream().anyMatch(device -> !device.isActive()))
+        .map(Map.Entry::getKey)
+        .collect(Collectors.toList());
+
+System.out.println("Комнаты с выключенными устройствами: " + String.join(", ", roomsWithOffDevices));
+
+
+
+Map<Boolean, List<BaseEntity>> groupedByStatus = manager.getAnalyticsStream()
+        .collect(Collectors.partitioningBy(BaseEntity::isActive));
+
+System.out.println("Включенные устройства (" + groupedByStatus.get(true).size() + " шт.):");
+groupedByStatus.get(true).forEach(d -> System.out.println(" - " + d.getName()));
+
+System.out.println("Выключенные устройства (" + groupedByStatus.get(false).size() + " шт.):");
+groupedByStatus.get(false).forEach(d -> System.out.println(" - " + d.getName()));
+
+
+
+
+Optional<BaseEntity> minPowerDevice = manager.getAnalyticsStream()
+        .filter(BaseEntity::isActive)
+        .min(Comparator.comparingDouble(BaseEntity::getMainMetric));
+
+if (minPowerDevice.isPresent()) {
+    System.out.println("Минимальное потребление: " + minPowerDevice.get().getDetails());
+} else {
+    System.out.println("Нет активных устройств.");
+}
+
+
+
+Map<String, Long> countByClass = manager.getAnalyticsStream()
+        .collect(Collectors.groupingBy(
+                device -> device.getClass().getSimpleName(),
+                Collectors.counting()
+        ));
+
+countByClass.forEach((className, count) -> 
+        System.out.println(className + ": " + count + " шт."));
+
+
+
+boolean hasHighPower = manager.getAnalyticsStream()
+        .anyMatch(device -> device.getMainMetric() > 3000.0);
+
+System.out.println("Есть устройство с потреблением > 3000 Вт: " + (hasHighPower ? "Да" : "Нет"));
+
+
+
+
+String activeNames = manager.getAnalyticsStream()
+        .filter(BaseEntity::isActive)
+        .map(BaseEntity::getName)
+        .collect(Collectors.joining(", "));
+
+System.out.println("Работающие устройства: " + (activeNames.isEmpty() ? "Ничего не включено" : activeNames));
